@@ -72,7 +72,7 @@ impl FromObject for Feature {
         match expect_type!(object) {
             "Feature" => Ok(Feature {
                 geometry: try!(util::get_geometry(&mut object)),
-                properties: try!(util::get_properties(&mut object)),
+                properties: util::get_properties(&mut object).unwrap_or(Some(serde_json::Map::new())),
                 id: try!(util::get_id(&mut object)),
                 bbox: try!(util::get_bbox(&mut object)),
                 foreign_members: try!(util::get_foreign_members(&mut object)),
@@ -171,6 +171,20 @@ mod tests {
             _ => unimplemented!(),
         };
         assert!(feature.geometry.is_none());
+    }
+
+    #[test]
+    fn feature_json_missing_properties() {
+        let geojson_str = r#"{
+            "geometry": {"coordinates":[1.1,2.1],"type":"Point"},
+            "type":"Feature"
+        }"#;
+        let geojson = geojson_str.parse::<GeoJson>().unwrap();
+        let feature = match geojson {
+            GeoJson::Feature(feature) => feature,
+            _ => unimplemented!(),
+        };
+        assert_eq!(properties(), feature.properties);
     }
 
     #[test]
